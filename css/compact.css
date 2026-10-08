@@ -1,0 +1,109 @@
+/* ===== compact, game-style UI (landscape phone first) ===== */
+#top { flex-wrap: wrap; gap: 6px; align-items: flex-start; padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) 4px max(8px, env(safe-area-inset-left)); }
+#where, #stars-count, #btn-voice, #btn-missions { padding: 3px 11px; font-size: 14px; min-height: 34px; }
+#btn-missions { pointer-events: auto; background: linear-gradient(#ff8fb4, #ff6b9d); border: 2px solid rgba(255, 255, 255, .6); border-radius: 999px; display: flex; gap: 4px; align-items: center; font-weight: 800; box-shadow: 0 3px 0 #c43c6c; }
+#btn-missions.pulse { animation: pulseBtn 1s ease-in-out infinite; }
+#top-r { gap: 6px; }
+
+/* mission banner lives inside the top bar */
+#mission { position: static; flex: 1 1 100%; order: 3; min-width: 0; margin: 0; padding: 4px 8px; gap: 6px; border-radius: 16px; pointer-events: auto; }
+#m-ico { font-size: 20px; }
+#m-goal { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+#m-sub { font-size: 12px; line-height: 1.15; }
+#m-hint, #m-skip, #m-go { height: 30px; min-width: 30px; font-size: 15px; padding: 0 8px; }
+#m-go { padding: 0 14px; border-radius: 999px; font-size: 14px; font-weight: 800; color: #3a2a00; background: linear-gradient(#ffe36e, #ffc21a); box-shadow: 0 3px 0 #b88700; animation: pulseBtn 1s ease-in-out infinite; }
+#m-pips i { width: 10px; height: 10px; }
+#hint { top: auto; bottom: 150px; }
+
+/* card: Kora + a short line, nothing else */
+#card { margin-top: 30px; padding: 6px 10px 8px; border-radius: 22px; }
+#kora { width: 70px; height: 70px; top: -40px; }
+#head { margin-left: 70px; min-height: 30px; position: relative; padding-right: 30px; }
+#c-tag { font-size: 10px; }
+#c-title { font-size: 16px; }
+#c-text { font-size: 14px; line-height: 1.3; margin-top: 2px; }
+#c-more { position: absolute; right: -4px; top: 0; width: 30px; height: 30px; font-size: 18px; border-radius: 50%; background: rgba(255, 255, 255, .15); }
+#c-chips { margin-top: 6px; }
+.chip { min-height: 32px; padding: 3px 11px; font-size: 13px; }
+#c-actions { margin-top: 6px; }
+#c-actions .primary, #c-actions .ghost { height: 36px; font-size: 15px; padding: 0 16px; }
+#card.full #c-text { max-height: 38vh; overflow-y: auto; }
+
+/* nav */
+#nav { padding: 3px; gap: 3px; border-radius: 22px; }
+#nav button { min-height: 44px; position: relative; }
+#nav i { font-size: 20px; }
+#nav span { font-size: 10px; }
+#nav button.pulse { animation: pulseBtn 1s ease-in-out infinite; }
+
+/* tools */
+.tool { padding: 4px 10px; font-size: 13px; border-radius: 18px; }
+.tool b { min-width: 62px; }
+.chip { flex: none; }
+.pbtn { width: 50px; }
+.pbtn i { width: 30px; height: 30px; }
+.pbtn span { font-size: 10px; }
+input[type=range]::-webkit-slider-thumb { width: 26px; height: 26px; }
+.phase-cv { width: 52px; height: 52px; }
+
+/* ===== LANDSCAPE: full-screen scene, floating HUD ===== */
+@media (min-aspect-ratio: 6/5) {
+  #top { flex-wrap: nowrap; align-items: center; }
+  #mission { flex: 1 1 auto; order: 0; width: auto; }
+  #mission.hidden + #top-r { margin-left: auto; }
+  #dock { display: contents; }
+  #card, #nav, #tools .tool { pointer-events: auto; }
+  #card { position: fixed; left: max(6px, env(safe-area-inset-left)); bottom: max(6px, env(safe-area-inset-bottom)); width: min(40vw, 330px); margin: 0; padding: 5px 10px 7px 78px; min-height: 66px; z-index: 6; }
+  #kora { left: 4px; top: 50%; transform: translateY(-50%); width: 68px; height: 68px; }
+  #head { margin-left: 0; }
+  #c-text { margin-top: 1px; max-height: 3.9em; overflow: hidden; }
+  #card.full #c-text { max-height: 30vh; }
+  #card.mini #c-text { display: none; }
+  #nav { position: fixed; right: max(6px, env(safe-area-inset-right)); top: 50%; transform: translateY(-50%); z-index: 6; flex-direction: column; width: 50px; }
+  #nav button { flex: none; width: 100%; min-height: 40px; }
+  #nav span { display: none; }
+  #nav i { font-size: 22px; }
+  #nav button.badge::after { top: -6px; right: -4px; font-size: 13px; }
+  #tools { position: fixed; left: calc(min(40vw, 330px) + 18px); right: 66px; bottom: max(6px, env(safe-area-inset-bottom)); flex-direction: column-reverse; z-index: 6; gap: 4px; }
+  #hint { left: calc(min(40vw, 330px) + 24px); right: auto; bottom: 14px; top: auto; transform: none; }
+  #where b { max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
+}
+@media (min-aspect-ratio: 6/5) and (max-width: 760px) { #where b { display: none; } #m-sub { display: none; } }
+@media (min-aspect-ratio: 6/5) and (max-height: 400px) { #c-title { font-size: 15px; } #c-text { font-size: 13px; } #card { min-height: 60px; } .tool { padding: 2px 8px; } }
+
+/* ===== PORTRAIT fallback keeps the bottom dock but compact ===== */
+@media (max-aspect-ratio: 6/5) {
+  #dock { gap: 5px; }
+  #c-text { font-size: 15px; max-height: 5.2em; overflow: hidden; }
+  #card.full #c-text { max-height: 30vh; overflow-y: auto; }
+  #head { margin-left: 74px; }
+  #nav button { min-height: 46px; }
+  #hint { top: auto; bottom: 230px; }
+}
+
+/* ===== mission picker ===== */
+#mpick { position: fixed; inset: 0; z-index: 45; display: flex; align-items: center; justify-content: center; background: rgba(4, 4, 30, .78); animation: fadeIn .25s; }
+.mp-panel { width: min(94vw, 760px); max-height: 92vh; display: flex; flex-direction: column; border-radius: 26px; padding: 10px 12px 12px; background: linear-gradient(160deg, #3b2f9a, #15185a); border: 3px solid rgba(255, 255, 255, .4); box-shadow: 0 16px 60px rgba(0, 0, 0, .6); }
+.mp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.mp-head h3 { flex: 1; font-size: 20px; color: var(--yellow); }
+.mp-head button { width: 38px; height: 38px; border-radius: 50%; background: rgba(255, 255, 255, .18); font-size: 18px; font-weight: 800; }
+.mp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; overflow-y: auto; padding: 2px; }
+.mp-tile { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; min-height: 86px; border-radius: 18px; background: rgba(255, 255, 255, .1); border: 2px solid rgba(255, 255, 255, .25); font-size: 12px; font-weight: 700; line-height: 1.15; text-align: center; position: relative; }
+.mp-tile i { font-style: normal; font-size: 26px; }
+.mp-tile span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mp-tile.done { background: rgba(66, 230, 176, .22); border-color: var(--mint); }
+.mp-tile.done::after { content: '\2714'; position: absolute; top: 2px; right: 6px; color: var(--mint); font-size: 16px; }
+.mp-tile.cur { border-color: var(--yellow); box-shadow: 0 0 14px rgba(255, 210, 63, .7); }
+.mp-tile.sug { animation: pulseBtn 1s ease-in-out infinite; border-color: var(--pink); }
+
+/* ===== quiz modal ===== */
+#quiz { position: fixed; inset: 0; z-index: 46; display: flex; align-items: center; justify-content: center; background: rgba(4, 4, 30, .78); animation: fadeIn .25s; }
+.q-card { width: min(94vw, 680px); padding: 14px 16px 16px; border-radius: 26px; text-align: center; background: linear-gradient(160deg, #3b2f9a, #15185a); border: 3px solid rgba(255, 255, 255, .4); box-shadow: 0 16px 60px rgba(0, 0, 0, .6); position: relative; }
+.q-card small { color: var(--mint); font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.q-card h3 { font-size: 21px; color: var(--yellow); margin: 2px 0 10px; line-height: 1.15; }
+.q-opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.q-card .opt { margin: 0; min-height: 60px; text-align: center; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.q-msg { min-height: 22px; margin-top: 8px; font-weight: 700; font-size: 15px; }
+.q-x { position: absolute; right: 8px; top: 8px; width: 34px; height: 34px; border-radius: 50%; background: rgba(255, 255, 255, .18); font-weight: 800; }
+@media (max-aspect-ratio: 6/5) { .q-opts { grid-template-columns: 1fr; } }
+@media (max-height: 420px) { .q-card h3 { font-size: 17px; margin-bottom: 6px; } .q-card .opt { min-height: 48px; font-size: 15px; } .mp-tile { min-height: 70px; } .mp-tile i { font-size: 22px; } }
