@@ -2,8 +2,21 @@
   'use strict';
   // Game layer: missions, quizzes, score, ranks, badges, sound and celebrations on top of the lessons.
   var C = S.core, $ = C.$, LESSONS = S.content.LESSONS, G = S.game = {};
-  var RANKS = [[0, '\ud83d\ude80', 'Cadet'], [20, '\ud83c\udf1f', 'Star Scout'], [55, '\ud83d\udef0\ufe0f', 'Sky Ranger'], [100, '\ud83e\ude90', 'Planet Pilot'], [150, '\ud83d\udc68\u200d\ud83d\ude80', 'Galaxy Captain'], [210, '\ud83c\udfc6', 'Space Legend']];
-  var WORLDS = { sky: ['\ud83c\udfd4\ufe0f', 'Ladakh Sky'], earth: ['\ud83c\udf0d', 'Earth'], moon: ['\ud83c\udf19', 'Moon'], solar: ['\u2600\ufe0f', 'Planets'], galaxy: ['\ud83c\udf0c', 'Galaxy'] };
+  var RANKS = [
+    [0, 'CADET', 'Cadet Explorer'],
+    [20, 'SCOUT', 'Star Scout'],
+    [55, 'RANGER', 'Sky Ranger'],
+    [100, 'PILOT', 'Planet Pilot'],
+    [150, 'COMMANDER', 'Galaxy Commander'],
+    [210, 'LEGEND', 'Master Astronomer']
+  ];
+  var WORLDS = {
+    sky: ['SEC 01', 'Ladakh Sky'],
+    earth: ['SEC 02', 'Earth'],
+    moon: ['SEC 03', 'Moon'],
+    solar: ['SEC 04', 'Planets'],
+    galaxy: ['SEC 05', 'Galaxy']
+  };
   var PLANETS = ['mercury', 'venus', 'earth', 'mars', 'jupiter', 'saturn', 'uranus', 'neptune'];
   var save = { score: 0, done: {} };
   try { var sv = JSON.parse(localStorage.getItem('skyj.game') || 'null'); if (sv) save = sv; } catch (e) { }
@@ -18,7 +31,7 @@
     ['Hanle', { t: 'tapN', n: 2, m: function (id) { return ['dome', 'moon'].indexOf(id) < 0 && id.indexOf(':') < 0; }, goal: 'Drag to look around, then tap 2 stars', hint: 'Tap any twinkling dot in the sky.' }],
     ['A telescope', { t: 'tapAll', ids: ['dome'], goal: 'Find and tap the white observatory dome', hint: 'Look low, near the mountains in the south-east.' }],
     ['Stars are', Z('What do stars use to shine?', ['Their own light', 'Reflected sunlight', 'Street lamps'], 0, 'Stars are glowing balls of gas that make their own light!')],
-    ['Where do stars', { t: 'seq', steps: ['\ud83c\udf05', '\ud83c\udf19'], ev: 'sunAlt', tests: [function (v) { return v > -4; }, function (v) { return v < -18; }], goal: 'Watch the sunrise, then slide the clock back to night', hint: 'Drag the clock slider back to the left.' }],
+    ['Where do stars', { t: 'seq', steps: ['DAWN', 'NIGHT'], ev: 'sunAlt', tests: [function (v) { return v > -4; }, function (v) { return v < -18; }], goal: 'Watch the sunrise, then slide the clock back to night', hint: 'Drag the clock slider back to the left.' }],
     ['Joining', Z('What do we call a pattern of stars?', ['Constellation', 'Galaxy', 'Comet'], 0, 'Constellations are patterns people imagined in the stars.')],
     ['The Big Dipper', conn([['dubhe', null], ['merak', 'dubhe'], ['phecda', 'merak'], ['megrez', 'phecda'], ['alioth', 'megrez'], ['mizar', 'alioth'], ['alkaid', 'mizar']], 'Connect the 7 stars of the Big Dipper!')],
     ['Find the Pole', { t: 'tapAll', ids: ['polaris'], goal: 'Tap the Pole Star at the end of the dashed line', hint: 'Follow the yellow dashes from Merak through Dubhe.' }],
@@ -42,7 +55,8 @@
     ['The Cows', Z('Which Indian cow breed went to Brazil?', ['Gir', 'Jersey', 'Holstein'], 0, 'Gir, Kankrej and Ongole are the Indian breeds there.')],
     ['We are all', Z('Orange paths on the globe show things that\u2026', ['Came to India', 'Left India', 'Stayed home'], 0, 'Blue paths went out from India.')],
     ['Vasudhaiva', Z('\u2018Vasudhaiva Kutumbakam\u2019 means\u2026', ['The world is one family', 'Eat more mangoes', 'Climb the mountain'], 0, 'We all share one home \u2014 Earth.')],
-    ['Earth spins', Z('Earth spinning once a day gives us\u2026', ['Day and night', 'The phases of the Moon', 'A new year'], 0, 'That spinning is called rotation.')],
+    ['Earth\u2019s axis', Z('What is Earth\u2019s axis?', ['An imaginary line from pole to pole', 'A real metal rod', 'The line around the middle'], 0, 'It is tilted about 23.5\u00b0 and points near the Pole Star.')],
+    ['Earth spins', Z('Which way does Earth spin?', ['West to east', 'East to west', 'It does not spin'], 0, 'That is why the Sun seems to rise in the east. One spin takes about 24 hours.')],
     ['Things that go', { t: 'tapN', n: 2, m: function (id) { return id.indexOf('sat:') === 0; }, goal: 'Tap 2 satellites to meet them', hint: 'Tap the little pills floating near Earth.' }],
 
     ['=The Moon', Z('Does the Moon make its own light?', ['No, it reflects sunlight', 'Yes, like the Sun', 'Only at night'], 0, 'The Moon shines by reflecting sunlight.')],
@@ -77,30 +91,89 @@
   };
   function keyOf(L) { return L.tab + '|' + L.title; }
   function isDone(L) { return !!save.done[keyOf(L)]; }
-
-  // ---------- sound ----------
-  var ac = null;
-  function tone(f, d, type, at, vol) {
-    if (!ac) return;
-    var t0 = ac.currentTime + (at || 0), o = ac.createOscillator(), g = ac.createGain();
-    o.type = type || 'sine'; o.frequency.value = f;
-    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol || 0.15, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
-    o.connect(g); g.connect(ac.destination); o.start(t0); o.stop(t0 + d + 0.05);
+  // Quizzes are asked only after all the exploring in their world is finished.
+  function isQuiz(L) { var d = G.peek(L); return !!d && d.t === 'quiz'; }
+  // Missions still to explore in a world (everything except its quizzes).
+  function exploreLeft(tab) {
+    var q = questIdx(tab);
+    for (var k = 0; k < q.length; k++) { var L = LESSONS[q[k]]; if (!isDone(L) && !isQuiz(L)) return true; }
+    return false;
   }
+  function exploreStats(tab) {
+    var q = questIdx(tab), t = 0, d = 0;
+    for (var k = 0; k < q.length; k++) { var L = LESSONS[q[k]]; if (isQuiz(L)) continue; t++; if (isDone(L)) d++; }
+    return [d, t];
+  }
+  // First undone mission of a world: exploration first, quizzes only once it is all explored.
+  // `from` scans forwards from that lesson, then wraps; -1 takes the earliest.
+  function pickIn(tab, quiz, from) {
+    var q = questIdx(tab), first = -1;
+    for (var k = 0; k < q.length; k++) {
+      var L = LESSONS[q[k]];
+      if (isDone(L) || isQuiz(L) !== quiz) continue;
+      if (first < 0) first = q[k];
+      if (q[k] > from) return q[k];
+    }
+    return first;
+  }
+
+  // ---------- sound (Cinematic Tactile Audio Synthesis) ----------
+  var ac = null;
+  function tone(f, d, type, at, vol, lowpassFreq) {
+    if (!ac) return;
+    var masterVol = S.ui ? (S.ui.getSettings().sfxEnabled ? S.ui.getSettings().sfxVolume : 0) : 1;
+    if (masterVol <= 0) return;
+    var t0 = ac.currentTime + (at || 0);
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = type || 'sine';
+    o.frequency.setValueAtTime(f, t0);
+
+    var effectiveVol = (vol || 0.12) * masterVol;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(effectiveVol, t0 + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + d);
+
+    if (lowpassFreq && ac.createBiquadFilter) {
+      var filter = ac.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(lowpassFreq, t0);
+      o.connect(filter);
+      filter.connect(g);
+    } else {
+      o.connect(g);
+    }
+
+    g.connect(ac.destination);
+    o.start(t0);
+    o.stop(t0 + d + 0.05);
+  }
+
   G.sfx = function (k) {
     if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; } }
     if (ac.state === 'suspended') ac.resume();
-    if (k === 'tap') tone(620, 0.08, 'triangle', 0, 0.08);
-    else if (k === 'ok') { tone(660, 0.12, 'triangle'); tone(880, 0.18, 'triangle', 0.1); }
-    else if (k === 'bad') { tone(200, 0.2, 'sawtooth', 0, 0.09); tone(150, 0.22, 'sawtooth', 0.12, 0.09); }
-    else if (k === 'win') [523, 659, 784, 1047].forEach(function (f, i) { tone(f, 0.22, 'triangle', i * 0.1); });
-    else if (k === 'level') [392, 523, 659, 784, 988, 1175].forEach(function (f, i) { tone(f, 0.2, 'square', i * 0.08, 0.07); });
+    if (k === 'tap') {
+      tone(520, 0.04, 'sine', 0, 0.06, 1800);
+    } else if (k === 'ok') {
+      tone(587.33, 0.09, 'sine', 0, 0.09, 2200); // D5
+      tone(880.00, 0.14, 'sine', 0.06, 0.11, 2600); // A5
+    } else if (k === 'bad') {
+      tone(220, 0.14, 'triangle', 0, 0.07, 600);
+      tone(185, 0.18, 'triangle', 0.08, 0.07, 500);
+    } else if (k === 'win') {
+      [523.25, 659.25, 783.99, 1046.50].forEach(function (f, i) {
+        tone(f, 0.24, 'sine', i * 0.08, 0.12, 3000);
+      });
+    } else if (k === 'level') {
+      [440, 554.37, 659.25, 880, 1108.73, 1318.51].forEach(function (f, i) {
+        tone(f, 0.22, 'sine', i * 0.07, 0.10, 3200);
+      });
+    }
   };
 
   // ---------- effects ----------
   var fx = document.createElement('div'); fx.id = 'fx'; document.body.appendChild(fx);
   G.confetti = function (x, y, n) {
-    var cols = ['#ffd23f', '#ff6b9d', '#42e6b0', '#4cc9ff', '#9b7bff'];
+    var cols = ['#d2b57d', '#85a9c6', '#edf1f6', '#303d4d', '#f0c674'];
     x = x == null ? window.innerWidth / 2 : x; y = y == null ? window.innerHeight * 0.4 : y;
     for (var i = 0; i < (n || 26); i++) {
       var p = document.createElement('i'), a = Math.random() * 6.283, d = 70 + Math.random() * 130;
@@ -113,10 +186,13 @@
     var t = document.createElement('div'); t.className = 'toast'; t.innerHTML = html; fx.appendChild(t);
     setTimeout(function () { t.classList.add('out'); }, ms || 1900); setTimeout(function () { t.remove(); }, (ms || 1900) + 400);
   }
-  $('gl').addEventListener('pointerdown', function (e) {
-    var r = document.createElement('i'); r.className = 'ripple'; r.style.left = e.clientX + 'px'; r.style.top = e.clientY + 'px'; fx.appendChild(r);
-    setTimeout(function () { r.remove(); }, 600);
-  });
+  var glEl = $('gl');
+  if (glEl) {
+    glEl.addEventListener('pointerdown', function (e) {
+      var r = document.createElement('i'); r.className = 'ripple'; r.style.left = e.clientX + 'px'; r.style.top = e.clientY + 'px'; fx.appendChild(r);
+      setTimeout(function () { r.remove(); }, 600);
+    });
+  }
 
   // ---------- score / rank ----------
   function rankIdx(s) { var k = 0; RANKS.forEach(function (r, i) { if (s >= r[0]) k = i; }); return k; }
@@ -124,18 +200,23 @@
   G.render = function () {
     var i = rankIdx(save.score), lo = RANKS[i][0], hi = RANKS[i + 1] ? RANKS[i + 1][0] : lo + 1;
     $('stars-n').textContent = save.score;
-    var tabQ = questIdx(LESSONS[Math.max(0, C.index)].tab), dn = tabQ.filter(function (k) { return isDone(LESSONS[k]); }).length;
+    var curIdx = Math.max(0, C.index);
+    var curTab = LESSONS[curIdx] ? LESSONS[curIdx].tab : 'sky';
+    var tabQ = questIdx(curTab), dn = tabQ.filter(function (k) { return isDone(LESSONS[k]); }).length;
     $('mis-n').textContent = dn + '/' + tabQ.length;
     $('rank-ico').textContent = RANKS[i][1];
     $('stars-count').title = RANKS[i][2];
     $('xp-fill').style.width = (RANKS[i + 1] ? Math.min(100, (save.score - lo) / (hi - lo) * 100) : 100) + '%';
     [].forEach.call(document.querySelectorAll('#nav button'), function (b) { b.classList.toggle('badge', worldDone(b.dataset.tab)); });
+    var tsRank = $('ts-profile-rank'), tsStars = $('ts-profile-stars');
+    if (tsRank) tsRank.textContent = RANKS[i][2];
+    if (tsStars) tsStars.textContent = save.score + ' Discoveries';
   };
   G.add = function (n) {
     var before = rankIdx(save.score);
     save.score += n; G.score = save.score; persist(); G.render();
     var after = rankIdx(save.score);
-    if (after > before) { G.sfx('level'); G.confetti(null, null, 40); toast('<b>' + RANKS[after][1] + ' New rank!</b><br>' + RANKS[after][2], 2400); S.Kora.mood('happy', 3); }
+    if (after > before) { G.sfx('level'); G.confetti(null, null, 40); toast('<b>RANK ADVANCEMENT</b><br>' + RANKS[after][2], 2400); S.Kora.mood('happy', 3); }
   };
   function worldDone(tab) {
     var any = false;
@@ -144,7 +225,7 @@
   }
 
   // ---------- mission banner ----------
-  var Q = null, banner = $('mission');
+  var Q = null, banner = $('mission'), goFn = null;
   function setPips(total, n) {
     var p = $('m-pips'); p.textContent = '';
     if (total > 8) { p.textContent = n + '/' + total; return; }
@@ -158,36 +239,51 @@
 
   G.reset = function () {
     if (Q && Q.d.t === 'connect') { var sc = C.current(); if (sc && sc.numbers) { sc.numbers([]); sc.links([]); } }
-    Q = null; showBanner(false); closeResult(); closeQuiz();
+    Q = null; goFn = null; showBanner(false); closeResult(); closeQuiz();
   };
 
   G.next = function (L) {
     var d = G.peek(L);
     if (!d || isDone(L)) return null;
-    if (d.t === 'quiz') return { label: 'Quiz time! \ud83c\udfaf', fn: openQuiz, cls: 'pulse' };
-    return { label: '\ud83d\udd12 Finish the mission', cls: 'locked', fn: function () { if (Q) { shake(banner); G.sfx('bad'); S.Kora.mood('alert', 1.5); sub(Q.d.hint); C.say('Finish the mission first! ' + (Q.d.hint || '')); } } };
+    if (d.t === 'quiz' && exploreLeft(L.tab)) return { label: 'Quiz at the end', cls: 'locked', fn: function () { C.say('Explore this world first \u2014 the quiz comes after the checklist!'); } };
+    if (d.t === 'quiz') return { label: 'Quiz ready \u25b6', fn: openQuiz, cls: 'pulse' };
+    return { label: 'Complete active objective', cls: 'locked', fn: function () { if (Q) { shake(banner); G.sfx('bad'); S.Kora.mood('alert', 1.5); sub(Q.d.hint); C.say('Finish the mission first! ' + (Q.d.hint || '')); } } };
   };
 
   G.begin = function (L, idx) {
     if (L.key === 'end') showResult();
     var d = G.peek(L), mg = $('m-go');
     mg.classList.add('hidden'); $('m-hint').classList.remove('hidden'); G.render();
-    if (!d || isDone(L)) { Q = null; showBanner(false); return; }
+    if (!d || isDone(L)) { Q = null; goFn = null; showBanner(false); return; }
+    if (d.t === 'quiz' && exploreLeft(L.tab)) {
+      // No questions while exploring: this world's quizzes wait for the end of its checklist.
+      Q = null;
+      var st = exploreStats(L.tab);
+      banner.classList.remove('good');
+      $('m-goal').textContent = 'Explore first — quiz unlocked after checklist';
+      setPips(st[1], st[0]);
+      sub('Finish this world\u2019s checklist first. The questions come at the end!');
+      $('m-skip').classList.add('hidden'); $('m-hint').classList.add('hidden');
+      goFn = function () { C.go(G.suggest()); };
+      mg.textContent = 'Keep exploring \u25b6'; mg.classList.remove('hidden');
+      showBanner(true);
+      return;
+    }
+    goFn = null;
     Q = { d: d, L: L, n: 0, set: {}, wrong: 0, hinted: false, done: false, go: null };
     banner.classList.remove('good'); sub(''); $('m-skip').classList.add('hidden');
     if (d.t === 'quiz') {
       $('m-goal').textContent = 'Quick quiz!'; progress(); showBanner(true);
-      Q.go = openQuiz; mg.textContent = 'Answer \u2753'; mg.classList.remove('hidden'); $('m-hint').classList.add('hidden');
+      Q.go = openQuiz; mg.textContent = 'Answer Knowledge Check'; mg.classList.remove('hidden'); $('m-hint').classList.add('hidden');
       return;
     }
     $('m-goal').textContent = d.goal; progress(); showBanner(true);
     if (d.t === 'hunt') sub(d.list[0][1]);
     if (d.t === 'connect') {
       var sc = C.current();
-      sc.showLines(false); sc.numbers(d.seq.map(function (s) { return s[0]; })); sc.setNext(0); sc.links([]);
     }
   };
-  $('m-go').addEventListener('click', function () { if (Q && Q.go) Q.go(); });
+  $('m-go').addEventListener('click', function () { if (Q && Q.go) Q.go(); else if (goFn) goFn(); });
 
   // ---------- events from the scenes ----------
   G.blockInfo = function () { return !!(Q && !Q.done && (Q.d.t === 'order' || Q.d.t === 'hunt' || Q.d.t === 'connect')); };
@@ -247,12 +343,12 @@
     if (!skipped && !silent) { G.sfx('win'); G.confetti(); S.Kora.mood('happy', 3); }
     save.done[keyOf(Q.L)] = 1; persist();
     if (reward) G.add(reward);
-    banner.classList.add('good'); $('m-goal').textContent = skipped ? 'Skipped' : '\u2714 Done!  +' + reward + ' \u2b50'; sub(''); $('m-skip').classList.add('hidden'); $('m-hint').classList.add('hidden');
+    banner.classList.add('good'); $('m-goal').textContent = skipped ? 'Skipped' : 'OBJECTIVE COMPLETE  +' + reward + ' DISCOVERIES'; sub(''); $('m-skip').classList.add('hidden'); $('m-hint').classList.add('hidden');
     var nx = G.suggest(), mg = $('m-go');
     Q.go = function () { C.go(nx); };
-    mg.textContent = LESSONS[nx].key === 'end' ? 'Finish \ud83c\udf89' : 'Next mission \u25b6'; mg.classList.remove('hidden');
+    mg.textContent = LESSONS[nx].key === 'end' ? 'Complete Expedition \u25b6' : 'Next Mission \u25b6'; mg.classList.remove('hidden');
     if (d.t === 'connect') { var sc = C.current(); sc.showLines(true); sc.reveal(d.seq.map(function (s) { return s[0]; })); }
-    if (!skipped && !silent) C.say(d.t === 'connect' ? 'You drew it! Great job, star detective!' : 'Mission complete! Awesome!');
+    if (!skipped && !silent) C.say(d.t === 'connect' ? 'Pattern established! Excellent scientific work.' : 'Mission complete! Observation recorded.');
     checkWorld(); G.render(); setTimeout(C.layout, 0);
   }
   var NEXT_TAB = { sky: 'earth', earth: 'moon', moon: 'solar', solar: 'galaxy' };
@@ -261,7 +357,7 @@
     if (worldDone(tab) && !save['badge_' + tab]) {
       save['badge_' + tab] = 1; persist();
       setTimeout(function () {
-        G.sfx('level'); G.confetti(null, null, 40); toast('<b>' + WORLDS[tab][0] + ' Badge won!</b><br>' + WORLDS[tab][1] + ' Explorer', 2600); G.add(10); G.render();
+        G.sfx('level'); G.confetti(null, null, 40); toast('<b>SECTOR QUALIFIED</b><br>' + WORLDS[tab][1] + ' Explorer', 2600); G.add(10); G.render();
         var nb = NEXT_TAB[tab] && document.querySelector('#nav button[data-tab="' + NEXT_TAB[tab] + '"]');
         if (nb) nb.classList.add('pulse');
       }, 900);
@@ -271,17 +367,34 @@
   // ---------- suggestions and mission picker ----------
   function questIdx(tab) { var o = []; LESSONS.forEach(function (L, i) { if (L.tab === tab && G.peek(L)) o.push(i); }); return o; }
   G.firstUndoneIn = function (tab) {
+    var i = pickIn(tab, false, -1);
+    if (i < 0) i = pickIn(tab, true, -1);
+    if (i >= 0) return i;
     var q = questIdx(tab);
-    for (var k = 0; k < q.length; k++) if (!isDone(LESSONS[q[k]])) return q[k];
     return q.length ? q[0] : -1;
   };
+  var TABS = ['sky', 'earth', 'moon', 'solar', 'galaxy'];
+  // World by world: all of its exploring first, then its quizzes, then on to the next world.
   G.suggest = function () {
-    var i, L;
-    for (i = Math.max(0, C.index) + 1; i < LESSONS.length; i++) { L = LESSONS[i]; if (G.peek(L) && !isDone(L)) return i; }
-    for (i = 0; i < LESSONS.length; i++) { L = LESSONS[i]; if (G.peek(L) && !isDone(L)) return i; }
+    var cur = Math.max(0, C.index), from = C.index < 0 ? -1 : C.index;
+    var start = Math.max(0, TABS.indexOf(LESSONS[cur].tab));
+    for (var k = 0; k < TABS.length; k++) {
+      var tab = TABS[(start + k) % TABS.length], f = k === 0 ? from : -1;
+      var i = pickIn(tab, false, f); if (i >= 0) return i;
+      i = pickIn(tab, true, f); if (i >= 0) return i;
+    }
     return LESSONS.length - 1;
   };
-  var TICON = { tapN: '\ud83d\udc46', tapAll: '\ud83d\udc46', connect: '\u2728', quiz: '\u2753', seq: '\u23f1\ufe0f', collect: '\u23f1\ufe0f', order: '\ud83e\ude90', hunt: '\ud83d\udd0e' };
+  var TICON = {
+    tapN: '<span class="m-icon-tag">[TARGET]</span>',
+    tapAll: '<span class="m-icon-tag">[TARGET]</span>',
+    connect: '<span class="m-icon-tag">[LINK]</span>',
+    quiz: '<span class="m-icon-tag">[CHECK]</span>',
+    seq: '<span class="m-icon-tag">[TIME]</span>',
+    collect: '<span class="m-icon-tag">[ORBIT]</span>',
+    order: '<span class="m-icon-tag">[SEQ]</span>',
+    hunt: '<span class="m-icon-tag">[SCAN]</span>'
+  };
   var picker = null;
   function closePicker() { if (picker) { picker.remove(); picker = null; } }
   G.openPicker = function () {
@@ -289,11 +402,11 @@
     var cur = LESSONS[Math.max(0, C.index)], tab = cur.tab, sug = G.suggest();
     picker = C.el('div'); picker.id = 'mpick';
     picker.innerHTML = '<div class="mp-panel"><div class="mp-head"><h3></h3><button type="button" aria-label="Close">\u2715</button></div><div class="mp-grid"></div></div>';
-    picker.querySelector('h3').textContent = WORLDS[tab][0] + ' ' + WORLDS[tab][1] + ' missions';
+    picker.querySelector('h3').textContent = WORLDS[tab][0] + ' // ' + WORLDS[tab][1].toUpperCase() + ' MISSIONS';
     var grid = picker.querySelector('.mp-grid');
     questIdx(tab).forEach(function (i) {
       var L = LESSONS[i], d = G.peek(L), b = C.el('button', 'mp-tile' + (isDone(L) ? ' done' : '') + (i === C.index ? ' cur' : '') + (i === sug ? ' sug' : ''));
-      b.type = 'button'; b.innerHTML = '<i>' + TICON[d.t] + '</i><span></span>'; b.lastChild.textContent = L.title;
+      b.type = 'button'; b.innerHTML = '<i>' + (TICON[d.t] || '[MIS]') + '</i><span></span>'; b.lastChild.textContent = L.title;
       b.onclick = function () { closePicker(); C.go(i); };
       grid.appendChild(b);
     });
@@ -311,7 +424,7 @@
     closeQuiz();
     var d = Q.d;
     quizEl = C.el('div'); quizEl.id = 'quiz';
-    quizEl.innerHTML = '<div class="q-card"><button class="q-x" type="button" aria-label="Close">\u2715</button><small>Quick quiz \u2b50</small><h3></h3><div class="q-opts"></div><div class="q-msg"></div></div>';
+    quizEl.innerHTML = '<div class="q-card"><button class="q-x" type="button" aria-label="Close">\u2715</button><small>KNOWLEDGE VERIFICATION</small><h3></h3><div class="q-opts"></div><div class="q-msg"></div></div>';
     quizEl.querySelector('h3').textContent = d.q;
     var box = quizEl.querySelector('.q-opts'), msg = quizEl.querySelector('.q-msg');
     d.o.map(function (t, i) { return [t, i]; }).sort(function () { return Math.random() - 0.5; }).forEach(function (p) {
@@ -321,13 +434,13 @@
         if (p[1] === d.a) {
           b.classList.add('right'); var reward = Q.wrong === 0 ? 5 : Q.wrong === 1 ? 3 : 2;
           G.sfx('win'); G.confetti(); S.Kora.mood('happy', 3);
-          msg.textContent = '\u2714 Correct!  +' + reward + ' \u2b50  \u2014 ' + d.why; C.say(d.why);
+          msg.textContent = 'CORRECT! +' + reward + ' DISCOVERIES \u2014 ' + d.why; C.say(d.why);
           [].forEach.call(box.children, function (x) { x.disabled = true; });
           finish(false, reward, true);
           setTimeout(closeQuiz, 2200);
         } else {
           Q.wrong++; b.classList.add('wrong'); b.disabled = true; G.sfx('bad'); S.Kora.mood('alert', 1.2); shake(quizEl.firstChild);
-          msg.textContent = Q.wrong >= 2 ? 'Hint: ' + d.why : 'Oops, try again!';
+          msg.textContent = Q.wrong >= 2 ? 'Analysis: ' + d.why : 'Incorrect telemetry, try again.';
         }
       });
       box.appendChild(b);
@@ -346,9 +459,9 @@
     LESSONS.forEach(function (L) { if (G.peek(L)) { tot++; if (isDone(L)) done++; } });
     res = C.el('div', 'result');
     var badges = Object.keys(WORLDS).map(function (t) { return '<span class="rb ' + (worldDone(t) ? 'on' : '') + '">' + WORLDS[t][0] + '<small>' + WORLDS[t][1] + '</small></span>'; }).join('');
-    res.innerHTML = '<div class="rcard"><h2>\ud83c\udf89 Mission Complete!</h2><div class="rbig">' + r[1] + '</div><b class="rrank">' + r[2] + '</b>' +
-      '<div class="rstars">\u2b50 ' + save.score + '</div><p>' + done + ' of ' + tot + ' missions done</p><div class="rbs">' + badges + '</div>' +
-      '<div class="rbtn"><button class="primary" id="r-again">Fly again \ud83d\ude80</button><button class="ghost" id="r-stay">Keep exploring</button></div></div>';
+    res.innerHTML = '<div class="rcard"><h2>EXPEDITION DEBRIEF</h2><div class="rbig">' + r[1] + '</div><b class="rrank">' + r[2] + '</b>' +
+      '<div class="rstars">' + save.score + ' DISCOVERIES LOGGED</div><p>' + done + ' of ' + tot + ' missions completed</p><div class="rbs">' + badges + '</div>' +
+      '<div class="rbtn"><button class="primary" id="r-again">Restart Flight \u25b6</button><button class="ghost" id="r-stay">Continue Exploration</button></div></div>';
     document.body.appendChild(res);
     G.sfx('level'); G.confetti(null, null, 50);
     res.querySelector('#r-stay').onclick = closeResult;
@@ -356,7 +469,7 @@
   }
 
   G.firstUndone = function () {
-    for (var i = 0; i < LESSONS.length; i++) { var L = LESSONS[i]; if (G.peek(L) && !isDone(L)) return i; }
+    for (var i = 0; i < LESSONS.length; i++) { var L = LESSONS[i]; if (G.peek(L) && !isDone(L)) return G.suggest(); }
     return 0;
   };
   G.hasProgress = function () { return Object.keys(save.done).length > 0; };

@@ -18,7 +18,7 @@
 
   var cur = null, curId = null, want = null, applied = null, appear = 0, zoom = 1, zoomT = 1, vel = { x: 0, y: 0 };
   var look = { queue: [], target: null, hold: 0 }, overlay = null, runners = [], tour = [], dist = 6, fit = 1.15;
-  var mode = null, satsGroup = null, sats = [], phase = { age: 10, tool: null };
+  var mode = null, satsGroup = null, sats = [], phase = { age: 10, tool: null }, spinSpeed = 0.6, refLine = null;
   var tl = new THREE.TextureLoader();
 
   function loadTex(f, cb) { tl.load(TEX + f, function (t) { t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; cb(t); }); }
@@ -175,8 +175,30 @@
   function nextLook() { if (!look.queue.length) { look.target = null; return; } look.target = quatFor(look.queue.shift()); look.hold = 0; }
   function startLook(list) { look.queue = (list || []).slice(); nextLook(); }
 
+  function setRef(on) {
+    if (!refLine && !on) return;
+    if (!refLine) {
+      refLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -1.75, 0), new THREE.Vector3(0, 1.75, 0)]), new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.08, gapSize: 0.06, transparent: true, opacity: 0.6 }));
+      refLine.computeLineDistances(); stage.add(refLine);
+    }
+    refLine.visible = on;
+  }
+  // Yellow arrow circling the equator in the direction Earth spins (west to east).
+  function spinArrow(group) {
+    var pts = [], a;
+    for (var k = 0; k <= 40; k++) { a = k / 40 * 4.3; pts.push(new THREE.Vector3(Math.cos(a) * 1.3, 0, -Math.sin(a) * 1.3)); }
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xffd23f })));
+    var cone = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.2, 12), new THREE.MeshBasicMaterial({ color: 0xffd23f }));
+    cone.position.copy(pts[pts.length - 1]);
+    cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(-Math.sin(4.3), 0, -Math.cos(4.3)));
+    group.add(cone);
+  }
+  function poleLabel(text, y) {
+    C.labels.add({ text: text, cls: 'pin const', pos: function (out) { out.set(0, y, 0); cur.group.localToWorld(out); return true; } });
+  }
+
   function applyLesson(L) {
-    applied = L; zoomT = 1; vel.x = vel.y = 0; mode = L.mode || null;
+    applied = L; zoomT = 1; vel.x = vel.y = 0; mode = L.mode || null; spinSpeed = L.spinSpeed || 0.6; setRef(false);
     fit = L.fit || (curId === 'sun' ? 1.3 : 1.15); setDist();
     cur.group.rotation.y = 0 + (curId === 'uranus' ? 0 : 0);
     pivot.quaternion.identity();
@@ -186,10 +208,25 @@
     if (mode === 'sats') { clearOverlay(); buildSats(); }
     if (mode === 'spin') {
       clearOverlay(); amb.intensity = 0.12; key.intensity = 2.6; key.position.set(4, 1, 2);
-      pivot.quaternion.setFromAxisAngle(new THREE.Vector3(0, 0, 1), -23.5 * D2R);
+      pivot.quaternion.setFromEuler(new THREE.Euler(L.arrow ? 0.38 : 0, 0, -23.5 * D2R, 'XYZ'));
       var pts = [new THREE.Vector3(0, -1.6, 0), new THREE.Vector3(0, 1.6, 0)];
       overlay = new THREE.Group(); cur.group.add(overlay);
       overlay.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xffd23f })));
+      if (L.axis) {
+        setRef(true);
+        poleLabel('North Pole', 1.75); poleLabel('South Pole', -1.75);
+        C.labels.add({ text: 'Tilt 23.5\u00b0', cls: 'pin', pos: function (out) { out.set(0.2, 1.38, 0).applyMatrix4(stage.matrixWorld); return true; } });
+      }
+      if (L.arrow) spinArrow(overlay);
+      if (L.tools && L.tools.indexOf('spinctl') >= 0) {
+        var sr = C.el('div', 'tool chips');
+        [['\u23f8', 0], ['\ud83d\udc22', 0.25], ['\u25b6', 0.6], ['\u23e9', 2.2]].forEach(function (p) {
+          var b = C.el('button', 'chip' + (p[1] === spinSpeed ? ' on' : ''), p[0]);
+          b.onclick = function () { spinSpeed = p[1]; [].forEach.call(sr.children, function (x) { x.classList.remove('on'); }); b.classList.add('on'); };
+          sr.appendChild(b);
+        });
+        C.tools.add(sr);
+      }
       look.queue = []; look.target = null;
     } else if (mode === 'phases') {
       amb.intensity = 0.07; key.intensity = 2.6;
@@ -205,7 +242,7 @@
   }
 
   sc.enter = function () { C.applyView(camera); };
-  sc.exit = function () { clearOverlay(); };
+  sc.exit = function () { clearOverlay(); setRef(false); };
   sc.lesson = function (L) { want = L; if (curId === L.b && applied !== null && cur) { applyLesson(L); } else applied = null; };
   sc.resize = function () { if (cur) setDist(); };
   sc.chip = function (ch) {
@@ -244,7 +281,7 @@
     }
     zoom += (zoomT - zoom) * Math.min(1, dt * 10); pivot.scale.setScalar(zoom);
     if (cur) {
-      if (mode === 'spin') cur.group.rotation.y += dt * 0.6;
+      if (mode === 'spin') cur.group.rotation.y += dt * spinSpeed;
       cur.spin.forEach(function (s) { s[0].rotation.y += s[1] * dt; });
     }
     sats.forEach(function (s) { s.a += s.d.sp * dt; s.m.position.set(Math.cos(s.a) * s.d.r, 0, Math.sin(s.a) * s.d.r); });

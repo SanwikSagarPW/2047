@@ -162,7 +162,7 @@
   C.info = function (d) {
     if (S.game && S.game.blockInfo()) return;
     if (!card.base) card.base = card.data;
-    d.back = { label: '\u2715 Close', fn: C.closeInfo };
+    d.back = { label: 'Close', fn: C.closeInfo };
     card.show(d);
   };
   C.closeInfo = function () {
@@ -178,20 +178,24 @@
     found[id] = 1;
     try { localStorage.setItem('skyj.found', JSON.stringify(found)); } catch (e) { }
     if (S.game) S.game.add(1);
-    var b = C.el('div', 'burst', '+1 \u2b50');
+    var b = C.el('div', 'burst', '+1 DISCOVERY');
     document.body.appendChild(b);
     setTimeout(function () { b.remove(); }, 1300);
     S.Kora.mood('happy', 1.6);
     return true;
   };
 
-  $('btn-voice').addEventListener('click', function () {
-    voice.on = !voice.on;
-    try { localStorage.setItem('skyj.voice', voice.on ? '1' : '0'); } catch (e) { }
-    $('btn-voice').textContent = voice.on ? '\ud83d\udd0a' : '\ud83d\udd07';
-    if (voice.on && card.data) C.say(card.data.text); else if (window.speechSynthesis) speechSynthesis.cancel();
-  });
-  $('btn-voice').textContent = voice.on ? '\ud83d\udd0a' : '\ud83d\udd07';
+  var voiceBtn = $('btn-voice');
+  if (voiceBtn) {
+    voiceBtn.addEventListener('click', function () {
+      voice.on = !voice.on;
+      try { localStorage.setItem('skyj.voice', voice.on ? '1' : '0'); } catch (e) { }
+      voiceBtn.classList.toggle('active', voice.on);
+      voiceBtn.title = voice.on ? 'Kora Voice: Active (Click to mute)' : 'Kora Voice: Muted (Click to enable)';
+      if (voice.on && card.data) C.say(card.data.text); else if (window.speechSynthesis) speechSynthesis.cancel();
+    });
+    voiceBtn.classList.toggle('active', voice.on);
+  }
 
   $('card').classList.add('swap');
   $('kora').addEventListener('click', function () {
@@ -213,16 +217,17 @@
   var fade = $('fade'), switching = false;
 
   function whereOf(L) {
-    if (L.s === 'sky') return ['\ud83c\udfd4\ufe0f', 'Hanle, Ladakh'];
-    if (L.s === 'orrery') return ['\u2600\ufe0f', 'Solar System'];
-    if (L.s === 'galaxy') return ['\ud83c\udf0c', 'Milky Way'];
-    var B = S.content.BODY[L.b], icons = { earth: '\ud83c\udf0d', moon: '\ud83c\udf19', sun: '\u2600\ufe0f' };
-    return [icons[L.b] || '\ud83e\ude90', B ? B.name : L.b];
+    if (L.s === 'sky') return ['SEC 01', 'Hanle, Ladakh'];
+    if (L.s === 'orrery') return ['SEC 04', 'Solar System'];
+    if (L.s === 'galaxy') return ['SEC 05', 'Milky Way'];
+    var B = S.content.BODY[L.b];
+    var sec = L.b === 'earth' ? 'SEC 02' : L.b === 'moon' ? 'SEC 03' : 'BODY';
+    return [sec, B ? B.name : L.b];
   }
 
   C.defaultNext = function (i) {
     var L = LESSONS[i], last = i === LESSONS.length - 1;
-    return { label: L.next || (last ? 'Start again \u21ba' : 'Next \u203a'), fn: last ? function () { C.go(0); } : C.next };
+    return { label: L.next || (last ? 'Restart Flight' : 'Next Mission'), fn: last ? function () { C.go(0); } : C.next };
   };
   function lessonCard(i) {
     var L = LESSONS[i];

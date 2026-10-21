@@ -70,11 +70,17 @@
     }
   }
   function closeHook() { C.$('c-back').onclick = function () { C.closeInfo(); deselect(); }; }
-  function deselect() { sel = null; cam.follow = new THREE.Vector3(); cam.goalDist = lessonCur && lessonCur.dist || 34; }
+  function deselect() {
+    sel = null;
+    cam.follow = new THREE.Vector3();
+    cam.goalDist = lessonCur && lessonCur.dist || 34;
+    if (S.ui && S.ui.closePlanetDrawer) S.ui.closePlanetDrawer();
+  }
 
   function select(id) {
     sel = id; var b = bodies[id]; if (!b) return;
     cam.follow = b.pos; cam.goalDist = Math.max(2.6, b.r * 7);
+    if (S.ui && S.ui.showPlanetDrawer) S.ui.showPlanetDrawer(id);
     var nw = C.discover('orr:' + id);
     if (id === 'comet') { C.info({ tag: 'Small body' + (nw ? ' \u00b7 +1 \u2b50' : ''), title: 'A comet', text: 'Comets are balls of ice and dust. Near the Sun they grow long glowing tails that always point away from the Sun. This one is like Halley\u2019s Comet, which returns about every 76 years.' }); closeHook(); return; }
     if (id === 'pluto') { C.info({ tag: 'Dwarf planet' + (nw ? ' \u00b7 +1 \u2b50' : ''), title: 'Pluto', text: 'Pluto is a dwarf planet \u2014 it is not one of the eight planets. It is small, icy and very far away.' }); closeHook(); return; }

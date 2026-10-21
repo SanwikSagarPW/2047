@@ -3,70 +3,486 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0a0d2e">
-<title>Journey Beyond Earth</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap">
+<meta name="theme-color" content="#090d14">
+<title>Star Explorer — Scientific Astronomy & Exploration</title>
+<!-- Modern, high-readability sans-serif font family -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/sky.css">
 <link rel="stylesheet" href="css/game.css">
 <link rel="stylesheet" href="css/compact.css">
 </head>
 <body>
+<!-- Primary 3D WebGL Canvas -->
 <canvas id="gl"></canvas>
-<div id="labels" aria-hidden="false"></div>
-<div id="fade"></div>
-<div id="hint">Drag to look &nbsp;&middot;&nbsp; Pinch to zoom &nbsp;&middot;&nbsp; Tap things!</div>
 
+<!-- 3D projected pins & interaction pills -->
+<div id="labels" aria-hidden="false"></div>
+
+<!-- Atmospheric Scene Transition Layer -->
+<div id="fade"></div>
+
+<!-- Subtle environmental gesture hint -->
+<div id="hint">
+  <span class="hint-icon"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6Z"/></svg></span>
+  <span class="hint-text">Drag to explore &middot; Pinch or wheel to zoom &middot; Tap celestial objects</span>
+</div>
+
+<!-- TOP HUD: Location, Active Mission & Explorer Status -->
 <header id="top">
-  <div id="where"><span id="where-ico">&#127956;&#65039;</span><b id="where-name">Hanle, Ladakh</b></div>
+  <!-- Top Left: Location Info & Expedition Selector shortcut -->
+  <button id="where" type="button" aria-label="Open Destination Map" title="Current Location (Click to change)">
+    <span id="where-ico" class="loc-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></span>
+    <div class="where-text">
+      <span class="where-label">SECTOR</span>
+      <b id="where-name">Hanle, Ladakh</b>
+    </div>
+    <span class="where-caret">▾</span>
+  </button>
+
+  <!-- Top Center: Current Mission Objective Bar -->
   <div id="mission" class="hidden">
-    <i id="m-ico">&#127919;</i>
-    <div id="m-main"><b id="m-goal"></b><span id="m-sub"></span></div>
-    <div id="m-pips"></div>
-    <button id="m-go" type="button" class="hidden"></button>
-    <button id="m-hint" type="button" aria-label="Hint">&#128161;</button>
-    <button id="m-skip" type="button" class="hidden">Skip</button>
+    <div class="m-badge">OBJECTIVE</div>
+    <div id="m-main">
+      <b id="m-goal">Loading mission...</b>
+      <span id="m-sub"></span>
+    </div>
+    <div id="m-pips" title="Mission Progress"></div>
+    <div class="m-controls">
+      <button id="m-hint" type="button" aria-label="Mission Hint" title="Get a scientific clue">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.87-3.13-7-7-7zm-2 18c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-1h-4v1z"/></svg>
+        <span>Hint</span>
+      </button>
+      <button id="m-skip" type="button" class="hidden">Skip</button>
+      <button id="m-go" type="button" class="hidden"></button>
+    </div>
   </div>
+
+  <!-- Top Right: Discovery Counter, Missions, Audio & Pause -->
   <div id="top-r">
-    <button id="btn-missions" type="button" aria-label="Missions">&#127919; <b id="mis-n">0</b></button>
-    <button id="btn-voice" type="button" aria-label="Read aloud">&#128263;</button>
-    <div id="stars-count"><span id="rank-ico">&#128640;</span> &#11088; <b id="stars-n">0</b></div>
+    <button id="btn-missions" type="button" aria-label="Open Field Journal" title="Open Field Journal & Missions">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      <span>Missions</span>
+      <b id="mis-n">0</b>
+    </button>
+
+    <div id="stars-count" title="Explorer Discoveries">
+      <span id="rank-ico"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2.5l2.6 5.3 5.9.8-4.3 4.2 1 5.9-5.2-2.7-5.2 2.7 1-5.9-4.3-4.2 5.9-.8z"/></svg></span>
+      <b id="stars-n">0</b>
+    </div>
+
+    <button id="btn-voice" type="button" aria-label="Toggle Kora Speech" title="Audio Readout">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+    </button>
+
+    <button id="btn-pause" type="button" aria-label="Pause Menu" title="Pause / Settings">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+    </button>
   </div>
 </header>
-<div id="xpline"><b id="xp-fill"></b></div>
 
+<!-- XP Explorer Progression Line -->
+<div id="xpline" aria-hidden="true"><b id="xp-fill"></b></div>
+
+<!-- DOCK: Environmental Tool Rail, Kora Assistant & World Navigation -->
 <section id="dock">
+  <!-- Interactive Scene Controls (Time of day, planet speeds, moon phases) -->
   <div id="tools"></div>
+
+  <!-- Kora Field Assistant Terminal -->
   <div id="card">
-    <canvas id="kora" width="150" height="150" aria-label="Kora, your guide"></canvas>
-    <div id="head"><small id="c-tag"></small><h2 id="c-title"></h2><button id="c-more" type="button" class="hidden" aria-label="Read more">&#128214;</button></div>
+    <div class="kora-frame">
+      <canvas id="kora" width="150" height="150" aria-label="Kora Holographic Assistant"></canvas>
+      <div class="kora-status-led"></div>
+    </div>
+    <div id="head">
+      <div class="c-tag-row">
+        <small id="c-tag">FIELD ASSISTANT</small>
+        <button id="c-more" type="button" class="hidden" aria-label="Expand scientific details" title="Expand Details">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
+        </button>
+      </div>
+      <h2 id="c-title">Kora</h2>
+    </div>
     <p id="c-text"></p>
     <div id="c-chips"></div>
-    <div id="c-actions"><button id="c-back" type="button" class="ghost"></button><button id="c-next" type="button" class="primary"></button></div>
+    <div id="c-actions">
+      <button id="c-back" type="button" class="ghost" aria-label="Previous step"></button>
+      <button id="c-next" type="button" class="primary" aria-label="Continue mission"></button>
+    </div>
   </div>
-  <nav id="nav">
-    <button data-tab="sky" class="on"><i>&#127956;&#65039;</i><span>Ladakh</span></button>
-    <button data-tab="earth"><i>&#127757;</i><span>Earth</span></button>
-    <button data-tab="moon"><i>&#127769;</i><span>Moon</span></button>
-    <button data-tab="solar"><i>&#9728;&#65039;</i><span>Planets</span></button>
-    <button data-tab="galaxy"><i>&#127756;</i><span>Galaxy</span></button>
+
+  <!-- Regional World Navigation Dock -->
+  <nav id="nav" aria-label="Exploration Worlds">
+    <button data-tab="sky" class="on" title="Hanle, Ladakh Night Sky">
+      <i class="nav-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M14 6l-3.75 5 2.85 3.8-1.6 1.2L7 10l-6 8h22L14 6z"/></svg></i>
+      <span>Ladakh</span>
+    </button>
+    <button data-tab="earth" title="Planet Earth & Satellites">
+      <i class="nav-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg></i>
+      <span>Earth</span>
+    </button>
+    <button data-tab="moon" title="The Moon & Phases">
+      <i class="nav-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12.3 2a10 10 0 0 0-1.9 19.8 10 10 0 1 1 11.4-11.4A10 10 0 0 0 12.3 2z"/></svg></i>
+      <span>Moon</span>
+    </button>
+    <button data-tab="solar" title="Solar System & Planetary Orbits">
+      <i class="nav-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0-5c-.55 0-1 .45-1 1v2c0 .55.45 1 1 1s1-.45 1-1V3c0-.55-.45-1-1-1zm0 16c-.55 0-1 .45-1 1v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1zm10-7h-2c-.55 0-1 .45-1 1s.45 1 1 1h2c.55 0 1-.45 1-1s-.45-1-1-1zM6 12c0-.55-.45-1-1-1H3c-.55 0-1 .45-1 1s.45 1 1 1h2c.55 0 1-.45 1-1z"/></svg></i>
+      <span>Planets</span>
+    </button>
+    <button data-tab="galaxy" title="The Milky Way Galaxy">
+      <i class="nav-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.93V19h-2v-2.07c-2.83-.48-5-2.94-5-5.93s2.17-5.45 5-5.93V3h2v2.07c2.83.48 5 2.94 5 5.93s-2.17 5.45-5 5.93zM12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4z"/></svg></i>
+      <span>Galaxy</span>
+    </button>
   </nav>
 </section>
 
+<!-- SCREEN 2: MAIN MENU (Cinematic Star Explorer Interface) -->
 <div id="title-screen">
   <div class="ts-stars"></div>
-  <canvas id="kora-big" width="260" height="260"></canvas>
-  <h1>Star Explorer Mission</h1>
-  <p>Complete missions, win &#11088; and badges, and rank up from Cadet to Space Legend &mdash; from Ladakh to the edge of the Universe!</p>
-  <button id="btn-start" type="button" class="primary big">&#9654; Start Mission</button>
-  <button id="btn-resume" type="button" class="ghost hidden">Continue where I stopped</button>
+  <div class="ts-glow"></div>
+
+  <div class="ts-container">
+    <!-- Left Hero Column: Title, Philosophy & Actions -->
+    <div class="ts-hero">
+      <div class="ts-kicker">EDUCATIONAL ASTRONOMY &amp; SPACE EXPLORATION</div>
+      <h1 class="ts-title">STAR EXPLORER</h1>
+      <p class="ts-tagline">Observe the universe. Understand your place in it.</p>
+      
+      <div class="ts-actions">
+        <button id="btn-start" type="button" class="ts-btn-primary">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          <span>BEGIN EXPEDITION</span>
+        </button>
+        <button id="btn-resume" type="button" class="ts-btn-resume hidden">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+          <span>CONTINUE EXPEDITION</span>
+        </button>
+      </div>
+
+      <div class="ts-secondary-actions">
+        <button id="ts-btn-map" type="button" class="ts-btn-sub">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
+          <span>Expedition Map</span>
+        </button>
+        <button id="ts-btn-journal" type="button" class="ts-btn-sub">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+          <span>Field Journal</span>
+        </button>
+        <button id="ts-btn-settings" type="button" class="ts-btn-sub">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          <span>Settings</span>
+        </button>
+      </div>
+
+      <!-- Compact Explorer Profile Card -->
+      <div class="ts-profile-card">
+        <div class="ts-profile-header">
+          <span class="ts-rank-badge">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2.5l2.6 5.3 5.9.8-4.3 4.2 1 5.9-5.2-2.7-5.2 2.7 1-5.9-4.3-4.2 5.9-.8z"/></svg>
+          </span>
+          <div>
+            <div class="ts-rank-label">CURRENT RANK</div>
+            <div class="ts-rank-name" id="ts-profile-rank">Cadet Explorer</div>
+          </div>
+          <div class="ts-profile-score">
+            <span class="star-sym"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></span>
+            <b id="ts-profile-stars">0 Discoveries</b>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Kora Hologram Terminal -->
+    <div class="ts-terminal">
+      <div class="ts-terminal-bezel">
+        <div class="ts-terminal-header">
+          <span class="terminal-led"></span>
+          <span class="terminal-title">KORA HOLOGRAPHIC AI ASSISTANT</span>
+          <span class="terminal-id">REV 2.4</span>
+        </div>
+        <div class="ts-terminal-screen">
+          <canvas id="kora-big" width="260" height="260"></canvas>
+          <div class="terminal-scanlines"></div>
+        </div>
+        <div class="ts-terminal-caption">
+          "Welcome to Star Explorer! From Ladakh's mountain telescope to the cosmic edge of the Milky Way, we will uncover the physics of our universe."
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
+<!-- SCREEN 3: EXPEDITION / DESTINATION SELECTOR MODAL -->
+<div id="modal-map" class="modal-backdrop" aria-hidden="true">
+  <div class="modal-dialog modal-map-dialog">
+    <div class="modal-header">
+      <div>
+        <div class="modal-subtitle">MISSION FLIGHT COMPUTER</div>
+        <h2 class="modal-title">Select Expedition Destination</h2>
+      </div>
+      <button type="button" class="modal-close-btn" aria-label="Close Map">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="map-destinations-grid" class="map-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 7: FIELD JOURNAL & ARCHIVE MODAL -->
+<div id="modal-journal" class="modal-backdrop" aria-hidden="true">
+  <div class="modal-dialog modal-journal-dialog">
+    <div class="modal-header">
+      <div>
+        <div class="modal-subtitle">EXPLORER LOGBOOK</div>
+        <h2 class="modal-title">Scientific Field Journal</h2>
+      </div>
+      <div class="journal-tab-bar">
+        <button type="button" class="journal-tab-btn active" data-tab="discoveries">
+          <span>Discoveries</span>
+        </button>
+        <button type="button" class="journal-tab-btn" data-tab="expeditions">
+          <span>Flight Logs</span>
+        </button>
+        <button type="button" class="journal-tab-btn" data-tab="notes">
+          <span>Science Notes</span>
+        </button>
+      </div>
+      <button type="button" class="modal-close-btn" aria-label="Close Journal">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="journal-tab-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 5 & 6: PLANET INSPECTION DRAWER -->
+<aside id="planet-drawer" class="planet-drawer" aria-label="Celestial Body Inspector">
+  <div class="pd-header">
+    <div class="pd-symbol" id="pd-symbol">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><circle cx="12" cy="12" r="7"/><path d="M2 12c2.5-3 17.5-3 20 0-2.5 3-17.5 3-20 0z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+    </div>
+    <div class="pd-header-meta">
+      <div class="pd-category" id="pd-category">Planetary Body</div>
+      <h3 class="pd-title" id="pd-title">Planet Name</h3>
+    </div>
+    <button type="button" id="pd-close-btn" class="pd-close" aria-label="Close Panel">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+    </button>
+  </div>
+
+  <div class="pd-scroll-content">
+    <div class="pd-section-label">ASTRONOMICAL DATA</div>
+    <div class="pd-stats-grid">
+      <div class="pd-stat-box">
+        <span class="pd-stat-label">Diameter</span>
+        <b class="pd-stat-val" id="pd-stat-diameter">—</b>
+      </div>
+      <div class="pd-stat-box">
+        <span class="pd-stat-label">Distance from Sun</span>
+        <b class="pd-stat-val" id="pd-stat-distance">—</b>
+      </div>
+      <div class="pd-stat-box">
+        <span class="pd-stat-label">Orbital Period (Year)</span>
+        <b class="pd-stat-val" id="pd-stat-orbit">—</b>
+      </div>
+      <div class="pd-stat-box">
+        <span class="pd-stat-label">Day Length (Rotation)</span>
+        <b class="pd-stat-val" id="pd-stat-day">—</b>
+      </div>
+      <div class="pd-stat-box">
+        <span class="pd-stat-label">Known Moons</span>
+        <b class="pd-stat-val" id="pd-stat-moons">—</b>
+      </div>
+      <div class="pd-stat-box">
+        <span class="pd-stat-label">Surface Temperature</span>
+        <b class="pd-stat-val" id="pd-stat-temp">—</b>
+      </div>
+      <div class="pd-stat-box pd-stat-full">
+        <span class="pd-stat-label">Atmosphere</span>
+        <b class="pd-stat-val" id="pd-stat-atmo">—</b>
+      </div>
+    </div>
+
+    <div class="pd-section-label">SCIENTIFIC OVERVIEW</div>
+    <p class="pd-desc" id="pd-desc"></p>
+
+    <div class="pd-section-label">KEY DISCOVERY FACTS</div>
+    <ul class="pd-facts-list" id="pd-facts-list"></ul>
+  </div>
+
+  <div class="pd-footer">
+    <button type="button" id="pd-inspect-3d-btn" class="pd-action-btn primary">
+      <span>Inspect Close-Up in 3D</span>
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+    </button>
+  </div>
+</aside>
+
+<!-- SCREEN 9: PAUSE MENU MODAL -->
+<div id="modal-pause" class="modal-backdrop" aria-hidden="true">
+  <div class="modal-dialog modal-pause-dialog">
+    <div class="pause-header">
+      <div class="pause-badge">EXPEDITION PAUSED</div>
+      <h2 class="pause-title">Star Explorer</h2>
+    </div>
+
+    <div class="pause-summary">
+      <div class="pause-summary-item">
+        <span class="pause-meta-label">Current Sector:</span>
+        <b id="pause-current-location">Hanle, Ladakh</b>
+      </div>
+      <div class="pause-summary-item">
+        <span class="pause-meta-label">Active Objective:</span>
+        <b id="pause-current-objective">Identify two stars</b>
+      </div>
+    </div>
+
+    <div class="pause-menu-buttons">
+      <button id="pause-resume-btn" type="button" class="pause-btn primary">
+        <span>Resume Expedition</span>
+      </button>
+      <button id="pause-map-btn" type="button" class="pause-btn">
+        <span>Expedition Map</span>
+      </button>
+      <button id="pause-journal-btn" type="button" class="pause-btn">
+        <span>Field Journal &amp; Archive</span>
+      </button>
+      <button id="pause-settings-btn" type="button" class="pause-btn">
+        <span>Settings &amp; Audio</span>
+      </button>
+      <button id="pause-mainmenu-btn" type="button" class="pause-btn ghost">
+        <span>Return to Main Menu</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 10: SETTINGS & ACCESSIBILITY MODAL -->
+<div id="modal-settings" class="modal-backdrop" aria-hidden="true">
+  <div class="modal-dialog modal-settings-dialog">
+    <div class="modal-header">
+      <div>
+        <div class="modal-subtitle">SYSTEM CONFIGURATION</div>
+        <h2 class="modal-title">Settings &amp; Accessibility</h2>
+      </div>
+      <button type="button" class="modal-close-btn" aria-label="Close Settings">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body settings-body">
+      <!-- Audio Settings -->
+      <div class="settings-group">
+        <h4 class="settings-group-title">Audio &amp; Voice Feedback</h4>
+        <div class="settings-row">
+          <div>
+            <label for="setting-sfx-toggle" class="setting-name">Sound Effects (SFX)</label>
+            <div class="setting-desc">Tactile audio feedback for discoveries and button interactions</div>
+          </div>
+          <input type="checkbox" id="setting-sfx-toggle" class="toggle-switch" checked>
+        </div>
+        <div class="settings-row">
+          <div>
+            <label for="setting-sfx-slider" class="setting-name">Master Volume</label>
+            <div class="setting-desc">Overall audio output level</div>
+          </div>
+          <input type="range" id="setting-sfx-slider" min="0" max="100" value="80" class="slider-control">
+        </div>
+        <div class="settings-row">
+          <div>
+            <label for="setting-voice-toggle" class="setting-name">Kora Voice Readout</label>
+            <div class="setting-desc">Spoken synthesis for scientific briefings and dialogue</div>
+          </div>
+          <input type="checkbox" id="setting-voice-toggle" class="toggle-switch">
+        </div>
+      </div>
+
+      <!-- Visual & Accessibility -->
+      <div class="settings-group">
+        <h4 class="settings-group-title">Display &amp; Accessibility</h4>
+        <div class="settings-row">
+          <div>
+            <label for="setting-text-scale" class="setting-name">Interface Text Size</label>
+            <div class="setting-desc">Scale typography for enhanced readability</div>
+          </div>
+          <select id="setting-text-scale" class="select-control">
+            <option value="standard">Standard (100%)</option>
+            <option value="large">Large Text (120%)</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <div>
+            <label for="setting-contrast-toggle" class="setting-name">High Contrast Mode</label>
+            <div class="setting-desc">Sharper panel borders and darkened surfaces</div>
+          </div>
+          <input type="checkbox" id="setting-contrast-toggle" class="toggle-switch">
+        </div>
+        <div class="settings-row">
+          <div>
+            <label for="setting-motion-toggle" class="setting-name">Reduced Motion</label>
+            <div class="setting-desc">Minimize animated transitions and screen pops</div>
+          </div>
+          <input type="checkbox" id="setting-motion-toggle" class="toggle-switch">
+        </div>
+      </div>
+
+      <!-- Navigation & Controls Guide -->
+      <div class="settings-group">
+        <h4 class="settings-group-title">Controls Reference</h4>
+        <div class="controls-guide-grid">
+          <div class="ctrl-item"><kbd>Left Mouse Drag</kbd><span>Look around 3D sky / Orbit celestial model</span></div>
+          <div class="ctrl-item"><kbd>Mouse Wheel / Pinch</kbd><span>Zoom in / out on celestial targets</span></div>
+          <div class="ctrl-item"><kbd>Left Click / Tap</kbd><span>Inspect stars, planets, and interactive objects</span></div>
+          <div class="ctrl-item"><kbd>Esc</kbd><span>Pause Expedition / Close Modals</span></div>
+        </div>
+      </div>
+
+      <!-- Data & Progress -->
+      <div class="settings-group danger-zone">
+        <h4 class="settings-group-title">Expedition Save Data</h4>
+        <div class="settings-row">
+          <div>
+            <div class="setting-name">Reset Flight Record</div>
+            <div class="setting-desc">Clear all discovered stars, completed missions, and badges</div>
+          </div>
+          <button id="setting-reset-progress-btn" type="button" class="btn-danger">Reset All Progress</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 8: MISSION COMPLETE CELEBRATION MODAL -->
+<div id="modal-mission-complete" class="modal-backdrop" aria-hidden="true">
+  <div class="modal-dialog modal-complete-dialog">
+    <div class="mc-trophy">
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>
+    </div>
+    <div class="mc-badge">MISSION ACCOMPLISHED</div>
+    <h2 class="mc-title" id="mc-title">Objective Completed</h2>
+    <div class="mc-reward" id="mc-reward">+5 DISCOVERIES</div>
+    <p class="mc-sub">Your scientific findings have been logged to the Field Journal.</p>
+    <div class="mc-actions">
+      <button id="mc-next-btn" type="button" class="primary big">Next Mission ▶</button>
+      <button id="mc-journal-btn" type="button" class="ghost">View in Journal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Core Engine Libraries & Simulation Scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="js/sky/astro.js"></script>
 <script src="js/sky/kora.js"></script>
 <script src="js/sky/content.js"></script>
 <script src="js/sky/core.js"></script>
 <script src="js/sky/game.js"></script>
+<script src="js/sky/ui.js"></script>
 <script src="js/sky/scene-sky.js"></script>
 <script src="js/sky/scene-body.js"></script>
 <script src="js/sky/scene-space.js"></script>
@@ -74,7 +490,8 @@
   Sky.core.boot();
   document.getElementById('btn-start').addEventListener('click', function () { Sky.core.start(false); });
   if (Sky.game.hasProgress()) {
-    var rb = document.getElementById('btn-resume'); rb.classList.remove('hidden');
+    var rb = document.getElementById('btn-resume');
+    rb.classList.remove('hidden');
     rb.addEventListener('click', function () { Sky.core.start(true); });
   }
 </script>
