@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0A1628">
-<title>Space Explorer Adventure</title>
-<!-- Playful, kid-friendly font family -->
+<meta name="theme-color" content="#0B1929">
+<title>Blast Off - Space Explorer</title>
+<meta name="description" content="Explore the universe with Blast Off - An educational space exploration game for young explorers">
+<!-- Professional game fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/sky.css">
 <link rel="stylesheet" href="css/game.css">
 <link rel="stylesheet" href="css/compact.css">
@@ -146,29 +147,29 @@
   <div class="ts-container">
     <!-- Left Hero Column: Title & Actions -->
     <div class="ts-hero">
-      <div class="ts-kicker">FUN SPACE LEARNING ADVENTURE</div>
-      <h1 class="ts-title">SPACE EXPLORER</h1>
-      <p class="ts-tagline">Discover amazing planets, bright stars, and the wonders of our universe!</p>
+      <div class="ts-kicker">SPACE EXPLORATION ADVENTURE</div>
+      <h1 class="ts-title">BLAST OFF</h1>
+      <p class="ts-tagline">Discover planets, explore stars, and journey through our amazing universe</p>
       
       <div class="ts-actions">
         <button id="btn-start" type="button" class="ts-btn-primary">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          <span>START ADVENTURE</span>
+          <span>START MISSION</span>
         </button>
         <button id="btn-resume" type="button" class="ts-btn-resume hidden">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-          <span>CONTINUE ADVENTURE</span>
+          <span>CONTINUE MISSION</span>
         </button>
       </div>
 
       <div class="ts-secondary-actions">
         <button id="ts-btn-map" type="button" class="ts-btn-sub">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>
-          <span>Space Map</span>
+          <span>Explore</span>
         </button>
         <button id="ts-btn-journal" type="button" class="ts-btn-sub">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-          <span>My Discoveries</span>
+          <span>Discoveries</span>
         </button>
         <button id="ts-btn-settings" type="button" class="ts-btn-sub">
           <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
@@ -183,12 +184,12 @@
             <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2.5l2.6 5.3 5.9.8-4.3 4.2 1 5.9-5.2-2.7-5.2 2.7 1-5.9-4.3-4.2 5.9-.8z"/></svg>
           </span>
           <div>
-            <div class="ts-rank-label">YOUR EXPLORER RANK</div>
-            <div class="ts-rank-name" id="ts-profile-rank">Beginning Explorer</div>
+            <div class="ts-rank-label">EXPLORER RANK</div>
+            <div class="ts-rank-name" id="ts-profile-rank">Space Cadet</div>
           </div>
           <div class="ts-profile-score">
             <span class="star-sym"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></span>
-            <b id="ts-profile-stars">0 Discoveries</b>
+            <b id="ts-profile-stars">0 Found</b>
           </div>
         </div>
       </div>
@@ -199,15 +200,15 @@
       <div class="ts-terminal-bezel">
         <div class="ts-terminal-header">
           <span class="terminal-led"></span>
-          <span class="terminal-title">KORA - YOUR SPACE BUDDY</span>
-          <span class="terminal-id">v2.4</span>
+          <span class="terminal-title">KORA AI COMPANION</span>
+          <span class="terminal-id">v3.0</span>
         </div>
         <div class="ts-terminal-screen">
           <canvas id="kora-big" width="260" height="260"></canvas>
           <div class="terminal-scanlines"></div>
         </div>
         <div class="ts-terminal-caption">
-          "Hi there! I'm Kora, your space buddy! Let's explore amazing planets, bright stars, and learn cool things about our universe together!"
+          "Hello explorer! I'm Kora, your space guide. Let's explore planets, discover stars, and learn about our incredible universe together!"
         </div>
       </div>
     </div>
